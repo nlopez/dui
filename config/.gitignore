@@ -1,2 +1,4 @@
+*
 !dui_example.ini
-*.ini
+!.gitignore
+
