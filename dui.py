@@ -43,28 +43,30 @@ if not 'dui' in config.sections():
     print("missing \"dui\" section in {}".format(config_file))
     sys.exit(1)
 
-cache_session = CacheControl(
-    requests.Session(), FileCache(config['dui']['cache_dir']))
-headers = {'user-agent': config['dui']['user_agent']}
+cache_dir = config['dui']['cache_dir']
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+cache_session = CacheControl(requests.Session(), FileCache(cache_dir))
+headers={'user-agent': config['dui']['user_agent']}
 
-reddit = praw.Reddit(
+reddit=praw.Reddit(
     username=config['dui']['reddit_username'],
     password=config['dui']['reddit_password'],
     client_id=config['dui']['reddit_client_id'],
     client_secret=config['dui']['reddit_client_secret'],
     user_agent=config['dui']['user_agent']
 )
-me = reddit.user.me()
-upvoted = me.upvoted(limit=int(config['dui']['upvoted_limit']))
-thread_count = int(config['dui']['thread_count'])
-timeout_seconds = int(config['dui']['timeout_seconds'])
-data_dir = config['dui']['data_dir']
+me=reddit.user.me()
+upvoted=me.upvoted(limit=int(config['dui']['upvoted_limit']))
+thread_count=int(config['dui']['thread_count'])
+timeout_seconds=int(config['dui']['timeout_seconds'])
+data_dir=config['dui']['data_dir']
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
-    future_to_url = {executor.submit(
+    future_to_url={executor.submit(
         process_submission, cache_session, s, headers, data_dir): s for s in upvoted}
     for future in concurrent.futures.as_completed(future_to_url, timeout=timeout_seconds):
-        url = future_to_url[future]
+        url=future_to_url[future]
         try:
             print(future.result())
         except Exception as exc:
