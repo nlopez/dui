@@ -1,4 +1,4 @@
-!ruis_example.ini
+!dui_example.ini
 *.ini
 .web_cache
-ruis/*
+dui/*

@@ -22,7 +22,7 @@ def process_submission(cache_session, submission, headers):
             subreddit = submission.subreddit.display_name
             created_utc = int(submission.created_utc)
             download_dir = os.path.join(
-                os.getcwd(), 'ruis', subreddit)
+                os.getcwd(), 'dui', subreddit)
             if not os.path.exists(download_dir):
                 os.makedirs(download_dir)
             title_id = slugify("{}-{}".format(submission.title, submission.id))
@@ -38,27 +38,27 @@ def process_submission(cache_session, submission, headers):
 
 
 config = configparser.ConfigParser()
-config_file = os.getenv('RUIS_INI', 'ruis.ini')
+config_file = os.getenv('DUI_INI', 'dui.ini')
 config.read(config_file)
-if not 'ruis' in config.sections():
-    print("missing \"ruis\" section in {}".format(config_file))
+if not 'dui' in config.sections():
+    print("missing \"dui\" section in {}".format(config_file))
     sys.exit(1)
 
 cache_session = CacheControl(
-    requests.Session(), FileCache(config['ruis']['cache_dir']))
-headers = {'user-agent': config['ruis']['user_agent']}
+    requests.Session(), FileCache(config['dui']['cache_dir']))
+headers = {'user-agent': config['dui']['user_agent']}
 
 reddit = praw.Reddit(
-    username=config['ruis']['reddit_username'],
-    password=config['ruis']['reddit_password'],
-    client_id=config['ruis']['reddit_client_id'],
-    client_secret=config['ruis']['reddit_client_secret'],
-    user_agent=config['ruis']['user_agent']
+    username=config['dui']['reddit_username'],
+    password=config['dui']['reddit_password'],
+    client_id=config['dui']['reddit_client_id'],
+    client_secret=config['dui']['reddit_client_secret'],
+    user_agent=config['dui']['user_agent']
 )
 me = reddit.user.me()
-upvoted = me.upvoted(limit=int(config['ruis']['upvoted_limit']))
-thread_count = int(config['ruis']['thread_count'])
-timeout_seconds = int(config['ruis']['timeout_seconds'])
+upvoted = me.upvoted(limit=int(config['dui']['upvoted_limit']))
+thread_count = int(config['dui']['thread_count'])
+timeout_seconds = int(config['dui']['timeout_seconds'])
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
     future_to_url = {executor.submit(
