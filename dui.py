@@ -14,15 +14,14 @@ import requests
 import sys
 
 
-def process_submission(cache_session, submission, headers):
+def process_submission(cache_session, submission, headers, data_dir):
     if getattr(submission, 'post_hint', None) == 'image':
         response = cache_session.get(submission.url, headers=headers)
         if response.status_code == 200:
             root, ext = os.path.splitext(submission.url)
             subreddit = submission.subreddit.display_name
             created_utc = int(submission.created_utc)
-            download_dir = os.path.join(
-                os.getcwd(), 'dui', subreddit)
+            download_dir = os.path.join(data_dir, subreddit)
             if not os.path.exists(download_dir):
                 os.makedirs(download_dir)
             title_id = slugify("{}-{}".format(submission.title, submission.id))
@@ -38,7 +37,7 @@ def process_submission(cache_session, submission, headers):
 
 
 config = configparser.ConfigParser()
-config_file = os.getenv('DUI_INI', 'dui.ini')
+config_file = os.getenv('DUI_INI', 'config/dui.ini')
 config.read(config_file)
 if not 'dui' in config.sections():
     print("missing \"dui\" section in {}".format(config_file))
@@ -59,10 +58,11 @@ me = reddit.user.me()
 upvoted = me.upvoted(limit=int(config['dui']['upvoted_limit']))
 thread_count = int(config['dui']['thread_count'])
 timeout_seconds = int(config['dui']['timeout_seconds'])
+data_dir = config['dui']['data_dir']
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
     future_to_url = {executor.submit(
-        process_submission, cache_session, s, headers): s for s in upvoted}
+        process_submission, cache_session, s, headers, data_dir): s for s in upvoted}
     for future in concurrent.futures.as_completed(future_to_url, timeout=timeout_seconds):
         url = future_to_url[future]
         try:
