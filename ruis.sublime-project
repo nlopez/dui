@@ -1,0 +1,11 @@
+{
+  "settings": {
+    "python_virtualenv": "$project_path/.venv"
+  },
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}
