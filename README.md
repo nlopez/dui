@@ -13,5 +13,7 @@
 		dui
 	```
 
-`dui` will look for your last 1000 upvoted image posts and download their originals to `data`, using
+`dui` will look for your last 1000 upvoted image posts (this is a Reddit API limitation) and download their images to `data/$subreddit`.
+
+A cache is kept in `cache`, so that you can re-run `dui` periodically, without re-downloading any images you've recently retrieved.
 
