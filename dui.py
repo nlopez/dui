@@ -3,7 +3,6 @@ from cachecontrol import CacheControl
 from cachecontrol.caches.file_cache import FileCache
 from pprint import pprint
 from requests import Session
-from slugify import slugify
 from time import time
 from urllib.parse import urlparse
 import concurrent.futures
@@ -21,18 +20,24 @@ def process_submission(cache_session, submission, headers, data_dir):
             root, ext = os.path.splitext(submission.url)
             subreddit = submission.subreddit.display_name
             created_utc = int(submission.created_utc)
+
+            # directories by subreddit name
             download_dir = os.path.join(data_dir, subreddit)
             if not os.path.exists(download_dir):
                 os.makedirs(download_dir)
-            title_id = slugify("{}-{}".format(submission.title, submission.id))
-            filename = "{}{}".format(title_id, ext)
+
+            # filename from permalink + submission id
+            name = submission.permalink.strip('/').split('/')[-1]
+            filename = "{}-{}{}".format(name, submission.id, ext)
             download_path = os.path.join(download_dir, filename)
             with open(download_path, 'wb') as f:
                 f.write(response.content)
+
             # Set access time to now
             # Set modified time to the created timestamp of the Reddit post
             now = int(time())
             os.utime(download_path, (now, created_utc))
+
             return download_path
 
 

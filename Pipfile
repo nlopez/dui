@@ -8,7 +8,6 @@ verify_ssl = true
 [packages]
 praw = "*"
 requests = "*"
-python-slugify = "*"
 cachecontrol = {extras = ["filecache"],version = "*"}
 
 [requires]
