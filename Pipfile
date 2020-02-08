@@ -9,6 +9,7 @@ verify_ssl = true
 praw = "*"
 requests = "*"
 cachecontrol = {extras = ["filecache"],version = "*"}
+pebble = "*"
 
 [requires]
 python_version = "3.7"

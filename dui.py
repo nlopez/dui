@@ -11,11 +11,13 @@ import os
 import praw
 import requests
 import sys
+from pebble import ProcessPool
+from concurrent.futures import TimeoutError
 
 
 def process_submission(cache_session, submission, headers, data_dir):
     if getattr(submission, 'post_hint', None) == 'image':
-        response = cache_session.get(submission.url, headers=headers)
+        response = requests.get(submission.url, headers=headers)
         if response.status_code == 200:
             root, ext = os.path.splitext(submission.url)
             subreddit = submission.subreddit.display_name
@@ -40,6 +42,16 @@ def process_submission(cache_session, submission, headers, data_dir):
 
             return download_path
 
+def task_done(future):
+    try:
+        result = future.result()  # blocks until results are ready
+        print(result)
+    except TimeoutError as error:
+        print("Function took longer than %d seconds" % error.args[1])
+    except Exception as error:
+        print("Function raised %s" % error)
+        print(error.traceback)  # traceback of the function
+
 
 config = configparser.ConfigParser()
 config_file = os.getenv('DUI_INI', 'config/dui.ini')
@@ -51,7 +63,7 @@ if not 'dui' in config.sections():
 cache_dir = config['dui']['cache_dir']
 if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
-cache_session = CacheControl(requests.Session(), FileCache(cache_dir))
+cache_session = CacheControl(requests.Session(), cache=FileCache(cache_dir))
 headers={'user-agent': config['dui']['user_agent']}
 
 reddit=praw.Reddit(
@@ -67,12 +79,8 @@ thread_count=int(config['dui']['thread_count'])
 timeout_seconds=int(config['dui']['timeout_seconds'])
 data_dir=config['dui']['data_dir']
 
-with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
-    future_to_url={executor.submit(
-        process_submission, cache_session, s, headers, data_dir): s for s in upvoted}
-    for future in concurrent.futures.as_completed(future_to_url, timeout=timeout_seconds):
-        url=future_to_url[future]
-        try:
-            print(future.result())
-        except Exception as exc:
-            print('%r generated an exception: %s' % (url, exc))
+with ProcessPool(max_workers=thread_count) as pool:
+    for post in upvoted:
+        args = [cache_session, post, headers, data_dir]
+        future = pool.schedule(process_submission, args=args, timeout=timeout_seconds)
+        future.add_done_callback(task_done)
